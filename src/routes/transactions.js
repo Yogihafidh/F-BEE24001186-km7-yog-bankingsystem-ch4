@@ -5,7 +5,77 @@ import { PrismaClient } from "@prisma/client";
 const router = express.Router();
 const prisma = new PrismaClient();
 
-router.post("/api/v1/transactions", async (req, res) => {
+/**
+ * @swagger
+ * /transactions:
+ *   post:
+ *     summary: Create a new transaction
+ *     description: Creates a new transaction between a sender and a receiver, recording the amount transferred.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               senderAccountId:
+ *                 type: integer
+ *                 description: ID of the sender's account
+ *                 example: 1
+ *               receiverAccountId:
+ *                 type: integer
+ *                 description: ID of the receiver's account
+ *                 example: 2
+ *               amount:
+ *                 type: number
+ *                 description: Amount of money to be transferred
+ *                 example: 100.50
+ *     responses:
+ *       201:
+ *         description: Transaction created successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: ID of the created transaction
+ *                   example: 1
+ *                 amount:
+ *                   type: number
+ *                   description: The amount transferred
+ *                   example: 100.50
+ *                 sender:
+ *                   type: object
+ *                   description: The sender account details
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: ID of the sender's account
+ *                       example: 1
+ *                 receiver:
+ *                   type: object
+ *                   description: The receiver account details
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: ID of the receiver's account
+ *                       example: 2
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ *                   example: "Error creating transaction"
+ */
+
+router.post("/", async (req, res) => {
   const { senderAccountId, receiverAccountId, amount } = req.body;
   try {
     const transaction = await prisma.transaction.create({
@@ -21,8 +91,68 @@ router.post("/api/v1/transactions", async (req, res) => {
   }
 });
 
-// GET /api/v1/transactions: Menampilkan daftar transaksi
-router.get("/api/v1/transactions", async (req, res) => {
+/**
+ * @swagger
+ * /transactions:
+ *   get:
+ *     summary: Retrieve a list of transactions
+ *     description: Fetches all transactions from the database, including details of the sender and receiver.
+ *     responses:
+ *       200:
+ *         description: A list of transactions with sender and receiver details
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: integer
+ *                     description: ID of the transaction
+ *                     example: 1
+ *                   amount:
+ *                     type: number
+ *                     description: Amount of money transferred
+ *                     example: 100.50
+ *                   sender:
+ *                     type: object
+ *                     description: The sender's account details
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: ID of the sender's account
+ *                         example: 1
+ *                       name:
+ *                         type: string
+ *                         description: Name of the sender
+ *                         example: John Doe
+ *                   receiver:
+ *                     type: object
+ *                     description: The receiver's account details
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         description: ID of the receiver's account
+ *                         example: 2
+ *                       name:
+ *                         type: string
+ *                         description: Name of the receiver
+ *                         example: Jane Doe
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ *                   example: "Error fetching transactions"
+ */
+
+router.get("/", async (req, res) => {
   try {
     const transactions = await prisma.transaction.findMany({
       include: { sender: true, receiver: true },
@@ -33,8 +163,85 @@ router.get("/api/v1/transactions", async (req, res) => {
   }
 });
 
-// GET /api/v1/transactions/:transactionId: Menampilkan detail transaksi beserta pengirim dan penerimanya
-router.get("/api/v1/transactions/:transactionId", async (req, res) => {
+/**
+ * @swagger
+ * /transactions/{transactionId}:
+ *   get:
+ *     summary: Retrieve a specific transaction by ID
+ *     description: Fetches a single transaction from the database, including details of the sender and receiver, based on the transaction ID.
+ *     parameters:
+ *       - in: path
+ *         name: transactionId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the transaction to retrieve
+ *         example: 1
+ *     responses:
+ *       200:
+ *         description: Transaction details with sender and receiver information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: integer
+ *                   description: ID of the transaction
+ *                   example: 1
+ *                 amount:
+ *                   type: number
+ *                   description: Amount of money transferred
+ *                   example: 100.50
+ *                 sender:
+ *                   type: object
+ *                   description: The sender's account details
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: ID of the sender's account
+ *                       example: 1
+ *                     name:
+ *                       type: string
+ *                       description: Name of the sender
+ *                       example: John Doe
+ *                 receiver:
+ *                   type: object
+ *                   description: The receiver's account details
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       description: ID of the receiver's account
+ *                       example: 2
+ *                     name:
+ *                       type: string
+ *                       description: Name of the receiver
+ *                       example: Jane Doe
+ *       404:
+ *         description: Transaction not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ *                   example: "Transaction not found"
+ *       500:
+ *         description: Server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 error:
+ *                   type: string
+ *                   description: Error message
+ *                   example: "Error fetching transaction"
+ */
+
+router.get("/:transactionId", async (req, res) => {
   const { transactionId } = req.params;
   try {
     const transaction = await prisma.transaction.findUnique({
